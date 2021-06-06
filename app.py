@@ -105,7 +105,83 @@ def stations():
 
     return jsonify(stations)
 
+###################################################
+#Jsonifying Temperature Observation Query Results
+###################################################
 
+@app.route('/api/v1.0/tobs')
+def tobs():
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    # Query all temperature data in the last year and close session
+    date_year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+    result = session.query(Measurement.date,Measurement.tobs).filter(Measurement.date >= date_year_ago).all()
+    session.close()
+
+    tempall = []
+    for date, tobs in result:
+        tobs_dict = {}
+        tobs_dict["date"] = date
+        tobs_dict["temp"] = tobs
+        tempall.append(tobs_dict)
+
+    return jsonify(tempall)
+
+###################################################
+#Jsonifying Min, Max & Avg Temp: Start Only
+###################################################
+
+@app.route('/api/v1.0/<start>')
+def start_date(start):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    # Query for the min, max, & avg on or after start
+    min_max_avg = session.query(func.min(Measurement.tobs),\
+              func.max(Measurement.tobs),\
+              func.avg(Measurement.tobs))\
+              .filter(Measurement.date >= start).all()
+    session.close()
+
+    starttemps = []
+    for min,avg,max in min_max_avg:
+        temps_dict = {}
+        temps_dict["min"] = min
+        temps_dict["average"] = avg
+        temps_dict["max"] = max
+        starttemps.append(temps_dict)
+
+    return jsonify(starttemps)
+
+
+###################################################
+#Jsonifying Min, Max & Avg Temp: btw Start & end
+###################################################
+@app.route('/api/v1.0/<start>/<end>')
+def start_end_date(start,end):
+
+    session = Session(engine)
+
+
+    # Query for the min, max, & avg for start and end dates
+    min_max_avg = session.query(func.min(Measurement.tobs),\
+              func.max(Measurement.tobs),\
+              func.avg(Measurement.tobs))\
+              .filter(Measurement.date >= start)\
+              .filter(Measurement.date <= end).all()
+    session.close()
+
+
+    startendtemps = []
+    for min,avg,max in min_max_avg:
+        temp_dict = {}
+        temp_dict["Min"] = min
+        temp_dict["Average"] = avg
+        temp_dict["Max"] = max
+        startendtemps.append(temp_dict)
+
+    return jsonify(startendtemps)
 
 
 if __name__ =="__main__":
