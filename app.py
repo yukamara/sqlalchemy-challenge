@@ -132,21 +132,22 @@ def tobs():
 #Jsonifying Min, Max & Avg Temp: Start Only
 ###################################################
 
-@app.route('/api/v1.0/<start>')
-def start_date(start):
+@app.route('/api/v1.0/<start_date>')
+def start_date(start_date):
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
     # Query for the min, max, & avg on or after start
-    min_max_avg = session.query(func.min(Measurement.tobs),\
+    min_max_avg = session.query(Measurement.date, func.min(Measurement.tobs),\
               func.max(Measurement.tobs),\
-              func.avg(Measurement.tobs))\
-              .filter(Measurement.date >= start).all()
+              func.avg(Measurement.tobs)).group_by(Measurement.date)\
+              .filter(Measurement.date >= start_date).all()
     session.close()
 
     starttemps = []
-    for min,avg,max in min_max_avg:
+    for date,min,avg,max in min_max_avg:
         temps_dict = {}
+        temps_dict["Date"] = date
         temps_dict["min"] = min
         temps_dict["average"] = avg
         temps_dict["max"] = max
@@ -154,28 +155,28 @@ def start_date(start):
 
     return jsonify(starttemps)
 
-
 ###################################################
 #Jsonifying Min, Max & Avg Temp: btw Start & end
 ###################################################
-@app.route('/api/v1.0/<start>/<end>')
-def start_end_date(start,end):
+@app.route('/api/v1.0/<start_date>/<end_date>')
+def start_end_date(start_date,end_date):
 
     session = Session(engine)
 
 
     # Query for the min, max, & avg for start and end dates
-    min_max_avg = session.query(func.min(Measurement.tobs),\
+    min_max_avg = session.query(Measurement.date, func.min(Measurement.tobs),\
               func.max(Measurement.tobs),\
-              func.avg(Measurement.tobs))\
-              .filter(Measurement.date >= start)\
-              .filter(Measurement.date <= end).all()
+              func.avg(Measurement.tobs)).group_by(Measurement.date)\
+              .filter(Measurement.date >= start_date)\
+              .filter(Measurement.date <= end_date).all()
     session.close()
 
 
     startendtemps = []
-    for min,avg,max in min_max_avg:
+    for date,min,avg,max in min_max_avg:
         temp_dict = {}
+        temp_dict["Date"] = date
         temp_dict["Min"] = min
         temp_dict["Average"] = avg
         temp_dict["Max"] = max
